@@ -1,0 +1,98 @@
+# -*- coding:utf-8 -*-
+
+# Only one thing need to be aware of:
+# Only the section name is case sensitive
+
+import os
+import configparser
+
+
+class IniFile(object):
+
+    def __init__(self, path):
+        super().__init__()
+        self._ini_path = path
+        self._parser = configparser.ConfigParser()
+        self._parser.read(self._ini_path)
+
+        self._sections_name_set = set([])
+        for each in self.sections():
+            self._sections_name_set.add(each)
+
+    def get_value(self, section, key, default_v=None):
+        try:
+            return self._parser.get(section, key)
+        except:
+            return default_v
+
+    def set_value(self, section, key, value):
+        if not (isinstance(section, str) and isinstance(key, str) and isinstance(value, str)):
+            raise RuntimeError("No matter section/key/value, only string is allowed")
+        if section not in self._sections_name_set:
+            self._parser[section] = {}
+            self._sections_name_set.add(section)
+            print("Add new")
+        if key != "" and value != "" and key is not None and value is not None:
+            self._parser[section][key] = value
+
+    def del_pair(self, section, key):
+        if section in self._sections_name_set and key in self._parser[section]:
+            del self._parser[section][key]
+
+    def sections(self):
+        return self._parser.sections()
+
+    def del_section(self, section):
+        if section in self._sections_name_set:
+            del self._parser[section]
+            self._sections_name_set.remove(section)
+
+    def persistence(self):
+        with open(self._ini_path, "w") as cff:
+            self._parser.write(cff)
+
+
+def ini_read(ini_path):
+    if os.path.exists(ini_path) and os.path.isfile(ini_path):
+        try:
+            return IniFile(ini_path)
+        except:
+            pass
+    return None
+
+
+def ini_get_sections(ini_obj):
+    return ini_obj.sections()
+
+
+def ini_save(ini_obj):
+    ini_obj.persistence()
+
+
+def ini_get_value(ini_obj, section, key, default_v=None):
+    return ini_obj.get_value(section, key, default_v)
+
+
+def ini_set_value(ini_obj, section, key, value):
+    ini_obj.set_value(section, key, value)
+
+
+def ini_del_section(ini_obj, section):
+    ini_obj.del_section(section)
+
+
+def ini_del_pair(ini_obj: IniFile, section, key):
+    ini_obj.del_pair(section, key)
+
+
+if __name__ == '__main__':
+
+    ini_file_vo = ini_read("./example.ini")
+    if ini_file_vo:
+        print(ini_get_sections(ini_file_vo))
+        print(ini_get_value(ini_file_vo, "topsecret.server.com", "Port"))
+        ini_set_value(ini_file_vo, "default", "ggg", "1")
+        # ini_del_section(ini_file_vo, "default")
+        # ini_del_pair(ini_file_vo, "topsecret.server.com", "port")
+        print(ini_get_value(ini_file_vo, "default", "ggg"))
+        # ini_save(ini_file_vo)
